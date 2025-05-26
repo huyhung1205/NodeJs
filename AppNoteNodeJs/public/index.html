@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="icon_title.ico" type="image/x-icon">
+    <title>Notes Application</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Arial", sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f4f7fc;
+            text-align: center;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #bdc3c7;
+            border-radius: 5px;
+            outline: none;
+            resize: none;
+            background-color: #fff;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            border-color: #3498db;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            background-color: #5dbeff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+            transform: scale(1.02);
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin-top: 20px;
+        }
+
+        li {
+            background: #ffffff;
+            padding: 12px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            transition: transform 0.2s;
+        }
+
+        li:hover {
+            transform: scale(0.99);
+        }
+
+        li button {
+            width: 90px;
+            background: #e74c3c;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 3px;
+            color: white;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        li button:hover {
+            background: #c0392b;
+        }
+    </style>
+</head>
+
+<body>
+    <h1> Notes</h1>
+    <textarea id="noteInput" placeholder="Enter your note..."></textarea>
+    <button onclick="addNote()">Add Note</button>
+    <ul id="noteList"></ul>
+    <script>
+        document.getElementById("noteInput").addEventListener("keydown", function (event) {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault(); // Ngăn xuống dòng trong `textarea`
+                addNote(); // Gọi hàm thêm ghi chú
+            }
+        });
+        // async biến một hàm thành hàm bất đồng bộ, cho phép sử dụng await để viết code dễ hiểu hơn
+        async function loadNotes() {
+            const res = await fetch("/notes");
+            const notes = await res.json();
+            const noteList = document.getElementById("noteList");
+            noteList.innerHTML = "";
+            notes.forEach(note => {
+                const li = document.createElement("li");
+                li.innerHTML = `${note.text} <button onclick="deleteNote(${note.id})">Delete</button>`;
+                noteList.appendChild(li);
+            });
+        }
+        async function addNote() {
+            const noteInput = document.getElementById("noteInput");
+            const text = noteInput.value.trim(); // Loại bỏ khoảng trắng đầu/cuối
+            if (text === "") {
+                alert("Hãy nhập ghi chú!"); // Hiển thị hộp thoại cảnh báo
+                noteInput.value = "";
+                return; // Dừng lại, không gửi yêu cầu
+            }
+            await fetch("/notes", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text })
+            });
+            noteInput.value = ""; // Xóa nội dung sau khi nhập
+            loadNotes(); // Cập nhật danh sách ghi chú
+        }
+        async function deleteNote(id) {
+            await fetch(`/notes/${id}`, { method: "DELETE" });
+            loadNotes();
+        }
+        loadNotes();
+    </script>
+</body>
+
+</html>
